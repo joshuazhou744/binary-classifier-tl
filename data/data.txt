@@ -1,0 +1,1 @@
+place a directory called `snore_data` with `train_data_wav`, `holdout_data_wav` directories and a `labels.csv` file.
