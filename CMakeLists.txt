@@ -12,5 +12,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(torchlite)
 
-add_executable(snore_classifier src/main.cpp)
+add_executable(snore_classifier
+  src/main.cpp
+  src/loader.cpp
+)
+target_include_directories(snore_classifier PRIVATE include)
 target_link_libraries(snore_classifier PRIVATE torchlite)
