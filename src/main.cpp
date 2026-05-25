@@ -2,6 +2,9 @@
 #include <tl/tensor.h>
 #include <tl/factory.h>
 #include <tl/nn.h>
+#include <tl/autograd.h>
+#include <tl/optim.h>
+#include <tl/loss.h>
 
 #include <iostream>
 #include <vector>
@@ -10,6 +13,17 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+
+// copy batch_size samples into a contiguous batch tensor
+static void make_batch(const tl::Tensor& x_all, const std::vector<int>& y_all, const std::vector<int>& index, int start, int batch_size, int64_t per_sample, tl::Tensor& x_batch, std::vector<int>& y_batch) {
+  for (int b = 0; b < batch_size; ++b) {
+    int src = index[start + b];
+    const float* sp = x_all.data() + (int64_t) src * per_sample;
+    float* dp = x_batch.data() + (int64_t) b * per_sample;
+    std::copy(sp, sp + per_sample, dp);
+    y_batch[b] = y_all[src];
+  }
+}
 
 int main() {
   const std::string data_dir = "data/snore_data/";
@@ -113,6 +127,8 @@ int main() {
   int64_t pcount = 0;
   for (auto* p: model.parameters()) pcount += p->numel();
   std::cout << "model params: " << pcount << "\n";
+
+  
 
   tl::Tensor x_hold;
   std::vector<std::string> hold_filenames;
