@@ -38,7 +38,7 @@ int main() {
              data_dir + "labels.csv",
              config, small_n, x_all, y_all);
 
-  const int N = (int)y_all.size();
+  const int N = (int) y_all.size();
   const int64_t n_mels = x_all.sizes()[2];
   const int64_t n_frames = x_all.sizes()[3];
   const int64_t per_sample = 1 * n_mels * n_frames;
@@ -79,13 +79,13 @@ int main() {
   }
   int64_t total = (int64_t) train_i.size() * per_sample;
   float mean = (float)(sum / total);
-  float std = (float)std::sqrt(sq / total - (double)mean*mean) + 1e-6f;
-  std::cout << "norm: mean=" << mean << " std=" << std << "\n";
+  float standard_dev = (float)std::sqrt(sq / total - (double)mean*mean) + 1e-6f;
+  std::cout << "norm: mean=" << mean << " standard deviation=" << standard_dev << "\n";
 
   // use train data stats (mean/std) for all labeled data
   float* d = x_all.data();
   for (int64_t i = 0, n = x_all.numel(); i < n; ++i) {
-    d[i] = (d[i] - mean) / std;
+    d[i] = (d[i] - mean) / standard_dev;
   }
 
   std::cout << "data ready\n";
@@ -128,7 +128,65 @@ int main() {
   for (auto* p: model.parameters()) pcount += p->numel();
   std::cout << "model params: " << pcount << "\n";
 
-  
+  // trainin
+  tl::Adam opt(model.parameters(), 1e-4f, 1e-5, 0.9f, 0.999f, 1e-8f);
+  const int batch_size = 16;
+  const int epochs = 5;
+
+  tl::Tensor x_batch = tl::zeros({batch_size, 1, n_mels, n_frames});
+  std::vector<int> y_batch(batch_size);
+  std::mt19937 shuffle_rng(71);
+
+  for (int epoch = 0; epoch < epochs; ++epoch) {
+    // train mode
+    drop.set_training(true);
+    std::shuffle(train_i.begin(), train_i.end(), shuffle_rng);
+
+    float running = 0.0f;
+    int n_batches = 0;
+    const int n_tr = (int) train_i.size();
+    for (int start = 0; start + batch_size <= n_tr; start += batch_size) {
+      make_batch(x_all, y_all, train_i, start, batch_size, per_sample, x_batch, y_batch);
+
+      tl::Tensor logits = model.forward(x_batch);
+      tl::Tensor loss = tl::cross_entropy_loss(logits, y_batch);
+
+      opt.zero_grad();
+      loss.backward();
+      opt.step();
+      tl::release_graph(loss);
+
+      running += loss.data()[0];
+      ++n_batches;
+      std::cout << " epoch " << (epoch+1) << " batch " << n_batches
+                << " loss=" << loss.data()[0] << "\n";
+    }
+    float avg_loss = running / n_batches;
+
+    // validate
+    drop.set_training(false);
+    int correct = 0, errors = 0, total_train = 0;
+    const int n_va = (int) val_i.size();
+    for (int start = 0; start + batch_size <= n_va; start += batch_size) {
+      make_batch(x_all, y_all, val_i, start, batch_size, per_sample, x_batch, y_batch);
+      tl::Tensor logits = model.forward(x_batch);
+      for (int b = 0; b < batch_size; ++b) {
+        int pred = logits.data()[b*2 + 1] > logits.data()[b*2 + 0] ? 1 : 0;
+        if (pred == y_batch[b]) ++correct; else ++errors;
+        ++total_train;
+      }
+      tl::release_graph(logits);
+    }
+
+    float acc = 100.0f * correct / total_train;
+    float mae = (float) errors / total_train;
+
+    std::cout << "epoch " << (epoch+1) << "/" << epochs
+              << " loss=" << avg_loss
+              << " val_acc=" << acc << "%"
+              << " mae=" << mae << "\n";
+
+  }
 
   tl::Tensor x_hold;
   std::vector<std::string> hold_filenames;

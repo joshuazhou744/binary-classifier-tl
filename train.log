@@ -1,0 +1,37 @@
+loading training data
+load_train: processing 128 samples
+100/128
+loaded 128 samples, 1x64x469
+split -> train: 103 val: 25
+norm: mean=-58.8357 standard deviation=18.3686
+data ready
+flattened=59904
+model params: 3835042
+  e1 batch 1 loss=4.06312 rss=605MB
+  e1 batch 2 loss=3.38434 rss=810MB
+  e1 batch 3 loss=1.80005 rss=986MB
+  e1 batch 4 loss=0.94053 rss=1176MB
+  e1 batch 5 loss=1.18143 rss=1351MB
+  e1 batch 6 loss=1.33108 rss=1527MB
+  e1 batch 7 loss=0.633378 rss=1717MB
+  e1 batch 8 loss=0.5086 rss=1908MB
+  e1 batch 9 loss=0.648588 rss=2098MB
+  e1 batch 10 loss=0.705227 rss=2259MB
+  e1 batch 11 loss=0.542999 rss=2420MB
+  e1 batch 12 loss=1.07102 rss=2595MB
+epoch 1/8 loss=1.40086 val_acc=58.3333% mae=0.416667
+  e2 batch 1 loss=0.627459 rss=3149MB
+  e2 batch 2 loss=0.52061 rss=3184MB
+  e2 batch 3 loss=0.497415 rss=3187MB
+  e2 batch 4 loss=0.548306 rss=3173MB
+  e2 batch 5 loss=0.717978 rss=3173MB
+  e2 batch 6 loss=0.609246 rss=3170MB
+  e2 batch 7 loss=0.576067 rss=3192MB
+  e2 batch 8 loss=0.685637 rss=3307MB
+  e2 batch 9 loss=0.473152 rss=3426MB
+  e2 batch 10 loss=0.619664 rss=3429MB
+  e2 batch 11 loss=0.474801 rss=3370MB
+  e2 batch 12 loss=0.657141 rss=3310MB
+epoch 2/8 loss=0.583956 val_acc=75% mae=0.25
+  e3 batch 1 loss=0.618575 rss=3264MB
+  e3 batch 2 loss=0.531145 rss=3281MB
