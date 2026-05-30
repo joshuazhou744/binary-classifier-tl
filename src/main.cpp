@@ -165,7 +165,6 @@ int main() {
     // validate
     model.eval();
     int correct = 0, errors = 0, total_train = 0;
-    int pred0 = 0, pred1 = 0; // DIAG: track prediction class distribution
     const int n_va = (int) val_i.size();
     for (int start = 0; start + batch_size <= n_va; start += batch_size) {
       make_batch(x_all, y_all, val_i, start, batch_size, per_sample, x_batch, y_batch);
@@ -173,7 +172,6 @@ int main() {
       for (int b = 0; b < batch_size; ++b) {
         int pred = logits.data()[b*2 + 1] > logits.data()[b*2 + 0] ? 1 : 0;
         if (pred == y_batch[b]) ++correct; else ++errors;
-        if (pred == 0) ++pred0; else ++pred1; // DIAG
         ++total_train;
       }
       tl::release_graph(logits);
@@ -185,8 +183,7 @@ int main() {
     std::cout << "epoch " << (epoch+1) << "/" << epochs
               << " loss=" << avg_loss
               << " val_acc=" << acc << "%"
-              << " mae=" << mae
-              << " [DIAG pred0=" << pred0 << " pred1=" << pred1 << "]\n";
+              << " mae=" << mae;
 
   }
 
@@ -194,7 +191,7 @@ int main() {
   auto state = model.parameters();
   auto bufs = model.buffers();
   state.insert(state.end(), bufs.begin(), bufs.end());
-  tl::save_model("snore_model.tlmd", state);
+  tl::save_model("outputs/snore_model.tlmd", state);
   std::cout << "model saved to snore_model.tlmd\n";
 
   return 0;

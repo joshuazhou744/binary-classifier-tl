@@ -18,3 +18,10 @@ add_executable(snore_classifier
 )
 target_include_directories(snore_classifier PRIVATE include)
 target_link_libraries(snore_classifier PRIVATE torchlite)
+
+add_executable(snore_inference
+  src/inference.cpp
+  src/loader.cpp
+)
+target_include_directories(snore_inference PRIVATE include)
+target_link_libraries(snore_inference PRIVATE torchlite)
