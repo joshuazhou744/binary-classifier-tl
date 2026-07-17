@@ -16,7 +16,6 @@
 #include <cmath>
 #include <filesystem>
 
-std::filesystem::create_directories("outputs");
 
 // copy batch_size samples into a contiguous batch tensor
 static void make_batch(const tl::Tensor& x_all, const std::vector<int>& y_all, const std::vector<int>& index, int start, int batch_size, int64_t per_sample, tl::Tensor& x_batch, std::vector<int>& y_batch) {
@@ -30,6 +29,7 @@ static void make_batch(const tl::Tensor& x_all, const std::vector<int>& y_all, c
 }
 
 int main() {
+  std::filesystem::create_directories("outputs");
   const std::string data_dir = "data/snore_data/";
   const int small_n = -1;
 

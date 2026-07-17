@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <filesystem>
 
-std::filesystem::create_directories("outputs");
 
 int main() {
+  std::filesystem::create_directories("outputs");
   const std::string data_dir = "data/snore_data/";
   const int small_n = -1;
 
