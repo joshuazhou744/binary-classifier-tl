@@ -14,6 +14,9 @@
 #include <random>
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
+
+std::filesystem::create_directories("outputs");
 
 // copy batch_size samples into a contiguous batch tensor
 static void make_batch(const tl::Tensor& x_all, const std::vector<int>& y_all, const std::vector<int>& index, int start, int batch_size, int64_t per_sample, tl::Tensor& x_batch, std::vector<int>& y_batch) {
@@ -101,6 +104,11 @@ int main() {
   std::vector<int> y_batch(batch_size);
   std::mt19937 shuffle_rng(71);
 
+  auto state = model.parameters();
+  auto bufs = model.buffers();
+  state.insert(state.end(), bufs.begin(), bufs.end());
+  float best_f1 = -1.0f;
+
   for (int epoch = 0; epoch < epochs; ++epoch) {
     // train mode
     model.train();
@@ -160,14 +168,19 @@ int main() {
               << " loss=" << avg_loss
               << " val_acc=" << acc << "%"
               << " recall=" << recall
-              << " recall=" << precision
+              << " precision=" << precision
               << " mae=" << mae << "\n";
+
+    float f1 = (precision + recall > 0.0f)
+      ? 2.0f * precision * recall / (precision + recall)
+      : 0.0f;
+    if (f1 > best_f1) {
+      best_f1 = f1;
+      tl::save_model("outputs/snore_model.tlmd", state);
+      std::cout << " saved (f1=" << f1 << ")\n";
+    }
   }
 
-  auto state = model.parameters();
-  auto bufs = model.buffers();
-  state.insert(state.end(), bufs.begin(), bufs.end());
-  tl::save_model("outputs/snore_model.tlmd", state);
   std::cout << "model saved to snore_model.tlmd\n";
 
   return 0;

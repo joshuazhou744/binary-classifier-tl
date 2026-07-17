@@ -11,6 +11,9 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <filesystem>
+
+std::filesystem::create_directories("outputs");
 
 int main() {
   const std::string data_dir = "data/snore_data/";
@@ -46,7 +49,8 @@ int main() {
   tl::NoGradGuard no_grad;
 
   for (int start = 0; start + batch_size <= N; start += batch_size) {
-    for (int b = 0; b < batch_size; ++b) {
+    const int n_valid = std::min(batch_size, N - start);
+    for (int b = 0; b < n_valid; ++b) {
       const float* sp = x_hold.data() + (int64_t)(start + b) * per_sample;
       float* dp = x_batch.data() + (int64_t) b * per_sample;
       std::copy(sp, sp + per_sample, dp);
@@ -55,7 +59,7 @@ int main() {
     tl::Tensor logits = model.forward(x_batch);
     tl::Tensor probs = tl::softmax(logits);
 
-    for (int b = 0; b < batch_size; ++b) {
+    for (int b = 0; b < n_valid; ++b) {
       float snore_prob = probs.data()[b*2 + 1]; // P(class 1)
       out << hold_filenames[start + b] << "," << snore_prob << "\n";
     }
