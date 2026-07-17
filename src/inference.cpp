@@ -48,7 +48,7 @@ int main() {
 
   tl::NoGradGuard no_grad;
 
-  for (int start = 0; start + batch_size <= N; start += batch_size) {
+  for (int start = 0; start < N; start += batch_size) {
     const int n_valid = std::min(batch_size, N - start);
     for (int b = 0; b < n_valid; ++b) {
       const float* sp = x_hold.data() + (int64_t)(start + b) * per_sample;
