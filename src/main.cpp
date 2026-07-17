@@ -1,4 +1,5 @@
 #include "loader.h"
+#include "model.h"
 #include <tl/tensor.h>
 #include <tl/factory.h>
 #include <tl/nn.h>
@@ -85,42 +86,8 @@ int main() {
   std::cout << "data ready\n";
 
   // model
-  auto pool_out = [](int64_t L) {
-    return (L - 2) / 2 + 1;
-  };
-  int64_t Hf = pool_out(pool_out(n_mels)); // 64 -> 32 -> 16
-  int64_t Wf = pool_out(pool_out(n_frames)); // 469 -> 234 -> 117
-  int64_t flattened = 32 * Hf * Wf;
-  std::cout << "flattened=" << flattened << "\n";
-
-  // block 1: normalize inputs -> conv -> bn -> relu -> pool
-  tl::nn::InputNormalize norm;
-  norm.set_stats(mean, standard_dev);
-
-  tl::nn::Conv2d conv1(1, 16, 3, 1, 1); // (in, out, kernel, stride, pad)
-  tl::nn::BatchNorm2d bn1(16);
-  // depthwise-seperable block: dw conv -> bn -> relu, pw conv -> bn -> relu -> pool
-  tl::nn::Conv2d conv_dw(16, 16, 3, 1, 1, 16);
-  tl::nn::BatchNorm2d bn_dw(16);
-  tl::nn::Conv2d conv_pw(16, 32, 1);
-  tl::nn::BatchNorm2d bn_pw(32);
-  // head: flatten -> fc1 -> relu -> dropout -> fc2
-  tl::nn::Flatten flat;
-  tl::nn::Linear fc1(flattened, 64);
-  tl::nn::Dropout drop(0.5f);
-  tl::nn::Linear fc2(64, 2); // project finally to 2 classes (logits)
-
-  // stateless ops, reused
-  tl::nn::ReLU relu;
-  tl::nn::MaxPool2d pool(2, 2);
-
-  tl::nn::Sequential model({
-    &norm,
-    &conv1, &bn1, &relu, &pool,
-    &conv_dw, &bn_dw, &relu,
-    &conv_pw, &bn_pw, &relu, &pool,
-    &flat, &fc1, &relu, &drop, &fc2
-  });
+  SnoreModel model;
+  model.norm.set_stats(mean, standard_dev);
 
   int64_t pcount = 0;
   for (auto* p: model.parameters()) pcount += p->numel();
@@ -183,7 +150,7 @@ int main() {
     std::cout << "epoch " << (epoch+1) << "/" << epochs
               << " loss=" << avg_loss
               << " val_acc=" << acc << "%"
-              << " mae=" << mae;
+              << " mae=" << mae << "\n";
 
   }
 
