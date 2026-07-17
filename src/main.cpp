@@ -131,6 +131,7 @@ int main() {
     // validate
     model.eval();
     int correct = 0, total_val = 0;
+    int tp = 0, fp = 0, fn = 0; // true pos, false pos, false neg for snore class 1
     double mae_sum = 0.0;
     const int n_va = (int) val_i.size();
     for (int start = 0; start + batch_size <= n_va; start += batch_size) {
@@ -141,6 +142,9 @@ int main() {
         float p1 = probs.data()[b*2 + 1]; // P(snore)
         int pred = p1 > 0.5f? 1 : 0;
         if (pred == y_batch[b]) ++correct;
+        if (pred == 1 && y_batch[b] == 1) ++tp; // caught a real snore
+        if (pred == 1 && y_batch[b] == 0) ++fp; // falsely labeled snore
+        if (pred == 0 && y_batch[b] == 1) ++fn; // missed snore
         mae_sum += std::abs(p1 - (float)y_batch[b]);
         ++total_val;
       }
@@ -149,10 +153,14 @@ int main() {
 
     float acc = 100.0f * correct / total_val;
     float mae = (float) (mae_sum / total_val);
+    float recall = tp + fn > 0 ? (float)tp / (tp + fn) : 0.0f; // of real snores, how many caught
+    float precision = tp + fp > 0 ? (float)tp / (tp + fp) : 0.0f; // of predicted snores, how many real
 
     std::cout << "epoch " << (epoch+1) << "/" << epochs
               << " loss=" << avg_loss
               << " val_acc=" << acc << "%"
+              << " recall=" << recall
+              << " recall=" << precision
               << " mae=" << mae << "\n";
   }
 
