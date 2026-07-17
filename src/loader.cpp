@@ -19,6 +19,18 @@ static std::string join_path(const std::string& dir, const std::string& file) {
   return dir + "/" + file;
 }
 
+// helper: load a wav and enforce the config's sample rate
+static tl::audio::WavData load_checked(const std::string& path, const MelConfig& config) {
+  auto w = tl::audio::load_wav(path);
+  if (w.sample_rate != config.sample_rate) {
+    throw std::runtime_error(
+        "sample rate mismatch in " + path
+        + ": got " + std::to_string(w.sample_rate)
+        + ", expected " + std::to_string(config.sample_rate));
+  }
+  return w;
+}
+
 tl::Tensor compute_log_mel(const std::vector<float>& samples, const MelConfig& config) {
   // pad or truncate to fixed length
   int64_t fixed_length = static_cast<int64_t>(config.sample_rate) * static_cast<int64_t>(config.clip_duration);
@@ -96,7 +108,7 @@ void load_train(
   std::cout << "load_train: processing " << N << " samples\n";
 
   // read first sample to determine output shape
-  auto w0 = tl::audio::load_wav(join_path(wav_dir, pairs[0].first));
+  auto w0 = load_checked(join_path(wav_dir, pairs[0].first), config);
   tl::Tensor mel0 = compute_log_mel(w0.samples, config);
   int64_t n_mels = mel0.sizes()[1];
   int64_t n_frames = mel0.sizes()[2];
@@ -109,7 +121,7 @@ void load_train(
   labels[0] = pairs[0].second;
 
   for (int i = 1; i < N; ++i) {
-    auto w = tl::audio::load_wav(join_path(wav_dir, pairs[i].first));
+    auto w = load_checked(join_path(wav_dir, pairs[i].first), config);
     tl::Tensor mel = compute_log_mel(w.samples, config);
     std::memcpy(x.data() + i * per_sample, mel.data(), per_sample * sizeof(float));
     labels[i] = pairs[i].second;
@@ -148,7 +160,7 @@ void load_holdout(
   int N = static_cast<int>(filenames.size());
   std::cout << "load_holdout: processing " << N << " samples\n";
 
-  auto w0 = tl::audio::load_wav(join_path(wav_dir, filenames[0]));
+  auto w0 = load_checked(join_path(wav_dir, filenames[0]), config);
   tl::Tensor mel0 = compute_log_mel(w0.samples, config);
   int64_t n_mels = mel0.sizes()[1];
   int64_t n_frames = mel0.sizes()[2];
@@ -158,7 +170,7 @@ void load_holdout(
   std::memcpy(x.data(), mel0.data(), per_sample * sizeof(float));
 
   for (int i = 1; i < N; ++i) {
-    auto w = tl::audio::load_wav(join_path(wav_dir, filenames[i]));
+    auto w = load_checked(join_path(wav_dir, filenames[i]), config);
     tl::Tensor mel = compute_log_mel(w.samples, config);
     std::memcpy(x.data() + i * per_sample, mel.data(), per_sample * sizeof(float));
 

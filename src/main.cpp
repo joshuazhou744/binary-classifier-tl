@@ -2,16 +2,15 @@
 #include "model.h"
 #include <tl/tensor.h>
 #include <tl/factory.h>
-#include <tl/nn.h>
 #include <tl/autograd.h>
 #include <tl/optim.h>
 #include <tl/loss.h>
+#include <tl/ops.h>
 #include <tl/model_io.h>
 
 #include <iostream>
 #include <vector>
 #include <string>
-#include <numeric>
 #include <random>
 #include <algorithm>
 #include <cmath>
@@ -131,29 +130,31 @@ int main() {
 
     // validate
     model.eval();
-    int correct = 0, errors = 0, total_train = 0;
+    int correct = 0, total_val = 0;
+    double mae_sum = 0.0;
     const int n_va = (int) val_i.size();
     for (int start = 0; start + batch_size <= n_va; start += batch_size) {
       make_batch(x_all, y_all, val_i, start, batch_size, per_sample, x_batch, y_batch);
       tl::Tensor logits = model.forward(x_batch);
+      tl::Tensor probs = tl::softmax(logits);
       for (int b = 0; b < batch_size; ++b) {
-        int pred = logits.data()[b*2 + 1] > logits.data()[b*2 + 0] ? 1 : 0;
-        if (pred == y_batch[b]) ++correct; else ++errors;
-        ++total_train;
+        float p1 = probs.data()[b*2 + 1]; // P(snore)
+        int pred = p1 > 0.5f? 1 : 0;
+        if (pred == y_batch[b]) ++correct;
+        mae_sum += std::abs(p1 - (float)y_batch[b]);
+        ++total_val;
       }
       tl::release_graph(logits);
     }
 
-    float acc = 100.0f * correct / total_train;
-    float mae = (float) errors / total_train;
+    float acc = 100.0f * correct / total_val;
+    float mae = (float) (mae_sum / total_val);
 
     std::cout << "epoch " << (epoch+1) << "/" << epochs
               << " loss=" << avg_loss
               << " val_acc=" << acc << "%"
               << " mae=" << mae << "\n";
-
   }
-
 
   auto state = model.parameters();
   auto bufs = model.buffers();

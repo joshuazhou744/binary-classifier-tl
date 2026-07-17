@@ -2,8 +2,8 @@
 #include "model.h"
 #include <tl/tensor.h>
 #include <tl/factory.h>
-#include <tl/nn.h>
 #include <tl/autograd.h>
+#include <tl/ops.h>
 #include <tl/model_io.h>
 
 #include <iostream>
