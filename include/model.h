@@ -11,12 +11,12 @@ struct SnoreModel {
   tl::nn::BatchNorm2d bn_dw{16};
   tl::nn::Conv2d conv_pw{16, 32, 1};
   tl::nn::BatchNorm2d bn_pw{32};
-  tl::nn::GlobalAvgPool2d gap;
   tl::nn::Linear fc1{32, 64};
-  tl::nn::Dropout drop{0.5f};
+  tl::nn::Dropout drop{0.3f};
   tl::nn::Linear fc2{64, 2};
   tl::nn::ReLU relu;
   tl::nn::MaxPool2d pool{2, 2};
+  tl::nn::GlobalAvgPool2d gap;
 
   tl::nn::Sequential net{{
     &norm,
